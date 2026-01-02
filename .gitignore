@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# PyInstaller build artifacts
+tools/rekordbox-reader/build/
+tools/rekordbox-reader/dist/
+tools/rekordbox-reader/*.spec

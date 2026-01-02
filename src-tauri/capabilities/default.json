@@ -9,6 +9,27 @@
     "core:default",
     "opener:default",
     "dialog:default",
+    "shell:default",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "name": "binaries/rekordbox-reader",
+          "sidecar": true,
+          "args": true
+        }
+      ]
+    },
+    {
+      "identifier": "shell:allow-spawn",
+      "allow": [
+        {
+          "name": "binaries/rekordbox-reader",
+          "sidecar": true,
+          "args": true
+        }
+      ]
+    },
     {
       "identifier": "fs:allow-read-text-file",
       "allow": [

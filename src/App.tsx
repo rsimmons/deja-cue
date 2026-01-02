@@ -7,17 +7,20 @@ import {
   RekordboxLibrary,
   PlaylistNode,
 } from "./lib/rekordbox-parser";
+import { readRekordboxDatabase } from "./lib/database-reader";
 import { QuizEngine, QuizState } from "./lib/quiz-engine";
 import { Player } from "./components/Player";
 import { RevealCard } from "./components/RevealCard";
 import { PlaylistBrowser } from "./components/PlaylistBrowser";
 import "./App.css";
 
+type LibrarySource = "database" | "xml";
+
 type AppState =
   | { status: "loading" }
   | { status: "no-library" }
   | { status: "error"; message: string }
-  | { status: "ready"; library: RekordboxLibrary; engine: QuizEngine };
+  | { status: "ready"; library: RekordboxLibrary; engine: QuizEngine; source: LibrarySource };
 
 function App() {
   const [appState, setAppState] = useState<AppState>({ status: "loading" });
@@ -81,6 +84,24 @@ function App() {
     setAppState({ status: "loading" });
 
     try {
+      // Try to read from database first (auto-detects location)
+      try {
+        console.log("Attempting to read from Rekordbox database...");
+        const library = await readRekordboxDatabase();
+        console.log("Database read successful, tracks:", library.tracks.size);
+        if (library.tracks.size > 0) {
+          const engine = new QuizEngine(library.tracks);
+          setAppState({ status: "ready", library, engine, source: "database" });
+          // Clear any saved XML path since we're using database now
+          localStorage.removeItem("rekordbox-xml-path");
+          setXmlPath(null);
+          return;
+        }
+      } catch (dbError) {
+        console.error("Database read failed, falling back to XML:", dbError);
+      }
+
+      // Fall back to XML
       // Check for saved path in localStorage
       const savedPath = localStorage.getItem("rekordbox-xml-path");
       let path: string | null = null;
@@ -128,7 +149,7 @@ function App() {
       setXmlPath(path);
 
       const engine = new QuizEngine(library.tracks);
-      setAppState({ status: "ready", library, engine });
+      setAppState({ status: "ready", library, engine, source: "xml" });
     } catch (err) {
       console.error("Failed to parse library:", err);
       setAppState({
@@ -223,20 +244,32 @@ function App() {
   }
 
   // Render main quiz UI
-  const { library, engine } = appState;
+  const { library, engine, source } = appState;
 
   return (
     <div className="app">
       <aside className="sidebar">
         <div className="sidebar-header">
           <h1 className="app-title">Déjà Cue</h1>
-          <button
-            className="change-library-btn"
-            onClick={handleSelectFile}
-            title={xmlPath ?? "Change library"}
-          >
-            Change
-          </button>
+          <div className="header-buttons">
+            <button
+              className="header-btn"
+              onClick={loadLibrary}
+              title="Refresh library from Rekordbox"
+            >
+              Refresh
+            </button>
+            <button
+              className="header-btn"
+              onClick={handleSelectFile}
+              title={xmlPath ?? "Load from XML file"}
+            >
+              XML
+            </button>
+          </div>
+        </div>
+        <div className="library-source">
+          {source === "database" ? "Reading from Rekordbox database" : `Reading from XML${xmlPath ? `: ${xmlPath.split('/').pop()}` : ''}`}
         </div>
         <PlaylistBrowser
           root={library.playlists}

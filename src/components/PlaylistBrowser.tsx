@@ -47,11 +47,15 @@ function PlaylistItem({
             {hasChildren ? (isExpanded ? "▼" : "▶") : "○"}
           </span>
         ) : (
-          <span className="playlist-icon">♪</span>
+          <span className="playlist-icon">{node.isSmartPlaylist ? "⚡" : "♪"}</span>
         )}
-        <span className="playlist-name">{node.name}</span>
+        <span className={`playlist-name ${node.isSmartPlaylist ? "playlist-name--smart" : ""}`}>
+          {node.name}
+        </span>
         {node.type === "playlist" && (
-          <span className="playlist-count">{node.trackIds.length}</span>
+          <span className="playlist-count">
+            {node.isSmartPlaylist ? "—" : node.trackIds.length}
+          </span>
         )}
       </button>
 

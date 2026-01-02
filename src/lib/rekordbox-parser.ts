@@ -19,6 +19,7 @@ export interface PlaylistNode {
   type: "folder" | "playlist";
   children: PlaylistNode[];
   trackIds: string[]; // Only for playlists
+  isSmartPlaylist?: boolean; // Smart playlists can't be evaluated from DB
 }
 
 export interface RekordboxLibrary {

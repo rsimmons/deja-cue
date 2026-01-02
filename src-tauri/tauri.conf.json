@@ -10,13 +10,15 @@
     "frontendDist": "../dist"
   },
   "app": {
+    "withGlobalTauri": true,
     "windows": [
       {
         "title": "Déjà Cue",
         "width": 900,
         "height": 700,
         "minWidth": 600,
-        "minHeight": 500
+        "minHeight": 500,
+        "devtools": true
       }
     ],
     "security": {
@@ -36,6 +38,9 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
+    ],
+    "externalBin": [
+      "binaries/rekordbox-reader"
     ]
   }
 }

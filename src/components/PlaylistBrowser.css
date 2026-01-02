@@ -101,6 +101,11 @@
   white-space: nowrap;
 }
 
+.playlist-name--smart {
+  font-style: italic;
+  opacity: 0.7;
+}
+
 .playlist-count {
   font-size: 0.75rem;
   color: var(--text-secondary);

@@ -2,7 +2,7 @@ import { Track } from "../lib/rekordbox-parser";
 import "./RevealCard.css";
 
 interface RevealCardProps {
-  track: Track | null;
+  track: Track;
   isRevealed: boolean;
   onReveal: () => void;
   onNext: () => void;
@@ -14,14 +14,6 @@ export function RevealCard({
   onReveal,
   onNext,
 }: RevealCardProps) {
-  if (!track) {
-    return (
-      <div className="reveal-card reveal-card--empty">
-        <p>Press "Next" to start the quiz</p>
-      </div>
-    );
-  }
-
   return (
     <div className="reveal-card">
       {isRevealed ? (

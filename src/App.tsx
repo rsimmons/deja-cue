@@ -12,15 +12,17 @@ import { QuizEngine, QuizState } from "./lib/quiz-engine";
 import { Player } from "./components/Player";
 import { RevealCard } from "./components/RevealCard";
 import { PlaylistBrowser } from "./components/PlaylistBrowser";
+import { SourceChooser, DataSourceType } from "./components/SourceChooser";
 import "./App.css";
 
-type LibrarySource = "database" | "xml";
+const STORAGE_KEY_SOURCE_TYPE = "rekordbox-source-type";
+const STORAGE_KEY_XML_PATH = "rekordbox-xml-path";
 
 type AppState =
+  | { status: "choosing" }
   | { status: "loading" }
-  | { status: "no-library" }
   | { status: "error"; message: string }
-  | { status: "ready"; library: RekordboxLibrary; engine: QuizEngine; source: LibrarySource };
+  | { status: "ready"; library: RekordboxLibrary; engine: QuizEngine; source: DataSourceType };
 
 function App() {
   const [appState, setAppState] = useState<AppState>({ status: "loading" });
@@ -31,9 +33,14 @@ function App() {
   const [xmlPath, setXmlPath] = useState<string | null>(null);
   const engineRef = useRef<QuizEngine | null>(null);
 
-  // Load library on mount
+  // Check for saved preference on mount
   useEffect(() => {
-    loadLibrary();
+    const savedSourceType = localStorage.getItem(STORAGE_KEY_SOURCE_TYPE) as DataSourceType | null;
+    if (savedSourceType) {
+      loadFromSourceType(savedSourceType);
+    } else {
+      setAppState({ status: "choosing" });
+    }
   }, []);
 
   // Subscribe to quiz state changes
@@ -80,52 +87,104 @@ function App() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [quizState]);
 
-  const loadLibrary = async () => {
+  const loadFromSourceType = async (sourceType: DataSourceType) => {
     setAppState({ status: "loading" });
 
     try {
-      // Try to read from database first (auto-detects location)
-      try {
-        console.log("Attempting to read from Rekordbox database...");
-        const library = await readRekordboxDatabase();
-        console.log("Database read successful, tracks:", library.tracks.size);
-        if (library.tracks.size > 0) {
-          const engine = new QuizEngine(library.tracks);
-          setAppState({ status: "ready", library, engine, source: "database" });
-          // Clear any saved XML path since we're using database now
-          localStorage.removeItem("rekordbox-xml-path");
-          setXmlPath(null);
-          return;
-        }
-      } catch (dbError) {
-        console.error("Database read failed, falling back to XML:", dbError);
-      }
-
-      // Fall back to XML
-      // Check for saved path in localStorage
-      const savedPath = localStorage.getItem("rekordbox-xml-path");
-      let path: string | null = null;
-
-      if (savedPath && (await fileExists(savedPath))) {
-        path = savedPath;
+      if (sourceType === "database") {
+        await loadFromDatabase();
       } else {
-        // Try default location
-        const defaultPath = await getDefaultXmlPath();
-        if (await fileExists(defaultPath)) {
-          path = defaultPath;
-        }
-      }
-
-      if (path) {
-        await loadFromPath(path);
-      } else {
-        setAppState({ status: "no-library" });
+        await loadFromXml();
       }
     } catch (err) {
       console.error("Failed to load library:", err);
       setAppState({
         status: "error",
         message: err instanceof Error ? err.message : "Unknown error",
+      });
+    }
+  };
+
+  const loadFromDatabase = async () => {
+    console.log("Attempting to read from Rekordbox database...");
+    const library = await readRekordboxDatabase();
+    console.log("Database read successful, tracks:", library.tracks.size);
+
+    if (library.tracks.size === 0) {
+      setAppState({
+        status: "error",
+        message: "No tracks found in the Rekordbox database",
+      });
+      return;
+    }
+
+    localStorage.setItem(STORAGE_KEY_SOURCE_TYPE, "database");
+    const engine = new QuizEngine(library.tracks);
+    setAppState({ status: "ready", library, engine, source: "database" });
+  };
+
+  const loadFromXml = async () => {
+    // Check for saved path in localStorage
+    const savedPath = localStorage.getItem(STORAGE_KEY_XML_PATH);
+    let path: string | null = null;
+
+    if (savedPath && (await fileExists(savedPath))) {
+      path = savedPath;
+    } else {
+      // Try default location
+      const defaultPath = await getDefaultXmlPath();
+      if (await fileExists(defaultPath)) {
+        path = defaultPath;
+      }
+    }
+
+    if (path) {
+      await loadFromPath(path);
+    } else {
+      // Prompt user to select a file
+      await handleSelectFile();
+    }
+  };
+
+  const handleChooseDatabase = async () => {
+    setAppState({ status: "loading" });
+    try {
+      await loadFromDatabase();
+    } catch (err) {
+      console.error("Failed to load from database:", err);
+      setAppState({
+        status: "error",
+        message: err instanceof Error ? err.message : "Failed to read Rekordbox database",
+      });
+    }
+  };
+
+  const handleChooseXml = async () => {
+    // For XML, we always prompt the user to select a file on first choice
+    await handleSelectFile();
+  };
+
+  const handleChangeSource = () => {
+    // Stop playback before changing source
+    if (appState.status === "ready") {
+      appState.engine.reset();
+    }
+    setAppState({ status: "choosing" });
+  };
+
+  const refreshLibrary = async () => {
+    if (appState.status !== "ready") return;
+    const currentSource = appState.source;
+    // Stop playback before refreshing
+    appState.engine.reset();
+    setAppState({ status: "loading" });
+    try {
+      await loadFromSourceType(currentSource);
+    } catch (err) {
+      console.error("Failed to refresh library:", err);
+      setAppState({
+        status: "error",
+        message: err instanceof Error ? err.message : "Failed to refresh library",
       });
     }
   };
@@ -144,8 +203,9 @@ function App() {
         return;
       }
 
-      // Save path for next time
-      localStorage.setItem("rekordbox-xml-path", path);
+      // Save path and source type for next time
+      localStorage.setItem(STORAGE_KEY_XML_PATH, path);
+      localStorage.setItem(STORAGE_KEY_SOURCE_TYPE, "xml");
       setXmlPath(path);
 
       const engine = new QuizEngine(library.tracks);
@@ -167,6 +227,11 @@ function App() {
 
     if (selected) {
       await loadFromPath(selected);
+    } else {
+      // User cancelled - go back to chooser if we're in loading state
+      if (appState.status === "loading") {
+        setAppState({ status: "choosing" });
+      }
     }
   };
 
@@ -198,32 +263,27 @@ function App() {
     }
   }, [appState]);
 
-  // Render loading state
-  if (appState.status === "loading") {
+  // Render source chooser
+  if (appState.status === "choosing") {
     return (
       <div className="app app--centered">
-        <div className="loading">
-          <div className="loading-spinner" />
-          <p>Loading library...</p>
-        </div>
+        <SourceChooser
+          onChooseDatabase={handleChooseDatabase}
+          onChooseXml={handleChooseXml}
+        />
       </div>
     );
   }
 
-  // Render no library state
-  if (appState.status === "no-library") {
+  // Render loading state
+  if (appState.status === "loading") {
     return (
       <div className="app app--centered">
-        <div className="welcome">
-          <h1>Déjà Cue</h1>
-          <p>Test your track recognition skills</p>
-          <p className="welcome-hint">
-            No Rekordbox library found. Please select your rekordbox.xml file.
-          </p>
-          <button className="btn btn--primary" onClick={handleSelectFile}>
-            Select Library File
-          </button>
-        </div>
+        <SourceChooser
+          onChooseDatabase={handleChooseDatabase}
+          onChooseXml={handleChooseXml}
+          isLoading={true}
+        />
       </div>
     );
   }
@@ -235,8 +295,8 @@ function App() {
         <div className="error">
           <h2>Error</h2>
           <p>{appState.message}</p>
-          <button className="btn btn--primary" onClick={handleSelectFile}>
-            Try Another File
+          <button className="btn btn--primary" onClick={handleChangeSource}>
+            Try Again
           </button>
         </div>
       </div>
@@ -254,17 +314,17 @@ function App() {
           <div className="header-buttons">
             <button
               className="header-btn"
-              onClick={loadLibrary}
-              title="Refresh library from Rekordbox"
+              onClick={refreshLibrary}
+              title="Refresh library"
             >
               Refresh
             </button>
             <button
               className="header-btn"
-              onClick={handleSelectFile}
-              title={xmlPath ?? "Load from XML file"}
+              onClick={handleChangeSource}
+              title="Change data source"
             >
-              XML
+              Change
             </button>
           </div>
         </div>
@@ -284,39 +344,60 @@ function App() {
         <div className="quiz-container">
           {quizState && (
             <>
-              <RevealCard
-                track={quizState.currentTrack}
-                isRevealed={quizState.isRevealed}
-                onReveal={handleReveal}
-                onNext={handleNext}
-              />
-
-              {quizState.currentTrack && (
-                <Player
-                  playbackState={quizState.playbackState}
-                  isLoading={quizState.isLoading}
-                  onTogglePlayback={handleTogglePlayback}
-                />
+              {/* Start screen - no track loaded yet */}
+              {!quizState.currentTrack && !quizState.isLoading && !quizState.error && (
+                <div className="start-prompt">
+                  <button className="btn btn--primary btn--large" onClick={handleNext}>
+                    Start Quiz
+                  </button>
+                  <p className="keyboard-hint">
+                    Press <kbd>Enter</kbd> to start
+                  </p>
+                </div>
               )}
 
+              {/* Active quiz - track is loaded */}
+              {quizState.currentTrack && (
+                <>
+                  <RevealCard
+                    track={quizState.currentTrack}
+                    isRevealed={quizState.isRevealed}
+                    onReveal={handleReveal}
+                    onNext={handleNext}
+                  />
+
+                  <Player
+                    playbackState={quizState.playbackState}
+                    isLoading={quizState.isLoading}
+                    onTogglePlayback={handleTogglePlayback}
+                  />
+
+                  <p className="keyboard-hint keyboard-hint--bottom">
+                    <kbd>Space</kbd> play/pause
+                    {quizState.isRevealed ? (
+                      <> · <kbd>Enter</kbd> next track</>
+                    ) : (
+                      <> · <kbd>Enter</kbd> reveal</>
+                    )}
+                  </p>
+                </>
+              )}
+
+              {/* Loading state */}
+              {quizState.isLoading && !quizState.currentTrack && (
+                <div className="loading">
+                  <div className="loading-spinner" />
+                  <p>Loading track...</p>
+                </div>
+              )}
+
+              {/* Error state */}
               {quizState.error && (
                 <div className="error-banner">
                   <p>{quizState.error}</p>
                   <button className="btn btn--secondary" onClick={handleNext}>
                     Try Another Track
                   </button>
-                </div>
-              )}
-
-              {!quizState.currentTrack && !quizState.isLoading && (
-                <div className="start-prompt">
-                  <button className="btn btn--primary btn--large" onClick={handleNext}>
-                    Start Quiz
-                  </button>
-                  <p className="keyboard-hint">
-                    Press <kbd>Enter</kbd> to start, <kbd>Space</kbd> to
-                    play/pause
-                  </p>
                 </div>
               )}
             </>

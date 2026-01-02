@@ -4,10 +4,12 @@ A macOS app that quizzes you on tracks from your Rekordbox library. It plays ran
 
 ## Features
 
-- Reads directly from Rekordbox database (no manual XML export needed)
+- Two data source options on first launch:
+  - **Rekordbox Database**: Reads directly from Rekordbox — no export needed, but smart playlists aren't supported
+  - **XML Export**: Supports smart playlists, but requires manual export from Rekordbox
 - Filter by playlist or folder
 - Keyboard shortcuts: Space to play/pause, Enter to reveal/next
-- Falls back to XML if database reading fails
+- Remembers your data source choice between sessions
 
 ## Setup
 
@@ -71,6 +73,7 @@ src-tauri/
 ## Notes
 
 - The Python tool is READ-ONLY and safe to run while Rekordbox is open
-- Smart playlists show with a lightning bolt icon but can't be used (they're rule-based, not static track lists)
-- XML fallback: If database reading fails, click "XML" to manually select a rekordbox.xml file
+- Smart playlists show with a lightning bolt icon but can't be used when reading from the database (they're rule-based, not static track lists). Use XML export if you need smart playlists.
+- To export XML from Rekordbox: File → Export Collection in xml format (sometimes you need to run it twice due to a Rekordbox bug)
+- Click "Change" in the sidebar to switch between database and XML sources
 - App name: "Déjà Cue" in UI, "Deja Cue" in bundle/identifier (ASCII-safe)

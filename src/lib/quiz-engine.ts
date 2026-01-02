@@ -77,7 +77,19 @@ export class QuizEngine {
     } else {
       this.activeTrackIds = getAllTrackIdsFromPlaylist(playlist);
     }
-    // Reset used tracks when changing playlist
+    // Reset to start screen when changing playlist
+    this.reset();
+  }
+
+  /**
+   * Reset quiz to start screen
+   */
+  reset(): void {
+    getAudioPlayer().stop();
+    this.currentTrack = null;
+    this.isRevealed = false;
+    this.isLoading = false;
+    this.error = null;
     this.usedTrackIds.clear();
     this.notifyListeners();
   }

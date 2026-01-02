@@ -72,6 +72,17 @@ cp dist/rekordbox-reader ../../src-tauri/binaries/rekordbox-reader-aarch64-apple
 
 Then rebuild the Tauri app.
 
+## Data Source Selection
+
+On first launch, the app shows a chooser screen for the user to pick between:
+- **Database**: Direct Rekordbox database reading (no export needed, but no smart playlist support)
+- **XML Export**: Manual export from Rekordbox (supports smart playlists)
+
+The choice is saved in `localStorage` under key `rekordbox-source-type` ("database" or "xml").
+For XML, the file path is saved under `rekordbox-xml-path`.
+
+To reset to the chooser screen, click the "Change" button in the sidebar header.
+
 ## Rekordbox Database Details
 
 - **Playlist ordering**: Use `Seq` attribute for sort order

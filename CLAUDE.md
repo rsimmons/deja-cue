@@ -74,6 +74,17 @@ cp dist/rekordbox-reader ../../src-tauri/binaries/rekordbox-reader-aarch64-apple
 
 Then rebuild the Tauri app.
 
+## App Icon
+
+Source of truth: `src-tauri/icons/icon.png` (1024x1024 recommended)
+
+To regenerate all icon formats from the source:
+```bash
+pnpm tauri icon src-tauri/icons/icon.png
+```
+
+This overwrites `icon.icns` (macOS), `icon.ico` (Windows), and all PNG variants.
+
 ## Data Source Selection
 
 On first launch, the app shows a chooser screen for the user to pick between:

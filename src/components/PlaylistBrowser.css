@@ -1,0 +1,119 @@
+.playlist-browser {
+  background: var(--surface-color);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  max-height: 100%;
+}
+
+.playlist-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.playlist-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.track-count {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.playlist-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem 0;
+}
+
+.playlist-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.playlist-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.1s ease;
+}
+
+.playlist-row:hover {
+  background: var(--border-color);
+}
+
+.playlist-row--selected {
+  background: var(--accent-color) !important;
+  color: white;
+}
+
+.playlist-row--selected .playlist-count {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.playlist-row--all {
+  padding-left: 0.75rem;
+}
+
+.folder-icon {
+  font-size: 0.625rem;
+  width: 1rem;
+  text-align: center;
+  color: var(--text-secondary);
+  transition: transform 0.15s ease;
+}
+
+.folder-icon--open {
+  color: var(--accent-color);
+}
+
+.playlist-icon {
+  font-size: 0.75rem;
+  width: 1rem;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.playlist-row--selected .folder-icon,
+.playlist-row--selected .playlist-icon {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.playlist-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.playlist-count {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  padding: 0.125rem 0.5rem;
+  background: var(--border-color);
+  border-radius: 9999px;
+}
+
+.playlist-row--selected .playlist-count {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.playlist-children {
+  display: flex;
+  flex-direction: column;
+}

@@ -2,6 +2,8 @@
 
 Tauri v2 + React + TypeScript app. See README.md for human-readable docs.
 
+**After any work**: Check if CLAUDE.md or README.md need updates. Keep both concise but in sync with changes.
+
 ## Quick Commands
 
 ```bash

@@ -56,6 +56,7 @@ src/
     audio-player.ts       # HTML5 Audio wrapper with 30s playback limit
     quiz-engine.ts        # Random track selection, state management
   components/
+    SourceChooser.tsx     # Data source selection screen
     Player.tsx            # Playback controls
     RevealCard.tsx        # Track reveal UI
     PlaylistBrowser.tsx   # Playlist navigation sidebar

@@ -186,6 +186,17 @@ export class AudioPlayer {
   }
 
   /**
+   * Seek to a specific time within the play window
+   * @param time - Time in seconds (0 to maxPlayTime)
+   */
+  seek(time: number): void {
+    const clampedTime = Math.max(0, Math.min(time, this.state.maxPlayTime));
+    this.audio.currentTime = this.state.startOffset + clampedTime;
+    this.state.currentTime = clampedTime;
+    this.notifyListeners();
+  }
+
+  /**
    * Stop playback and reset
    */
   stop(): void {

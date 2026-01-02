@@ -229,6 +229,13 @@ export class QuizEngine {
   }
 
   /**
+   * Seek to a specific time
+   */
+  seek(time: number): void {
+    getAudioPlayer().seek(time);
+  }
+
+  /**
    * Get the number of tracks in the active set
    */
   getActiveTrackCount(): number {

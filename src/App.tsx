@@ -263,6 +263,12 @@ function App() {
     }
   }, [appState]);
 
+  const handleSeek = useCallback((time: number) => {
+    if (appState.status === "ready") {
+      appState.engine.seek(time);
+    }
+  }, [appState]);
+
   // Render source chooser
   if (appState.status === "choosing") {
     return (
@@ -370,6 +376,7 @@ function App() {
                     playbackState={quizState.playbackState}
                     isLoading={quizState.isLoading}
                     onTogglePlayback={handleTogglePlayback}
+                    onSeek={handleSeek}
                   />
 
                   <p className="keyboard-hint keyboard-hint--bottom">

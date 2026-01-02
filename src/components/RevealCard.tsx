@@ -18,9 +18,9 @@ export function RevealCard({
     <div className="reveal-card">
       {isRevealed ? (
         <div className="track-info">
-          <h2 className="track-name">{track.name}</h2>
-          <p className="track-artist">{track.artist}</p>
-          {track.album && <p className="track-album">{track.album}</p>}
+          <h2 className="track-name" title={track.name}>{track.name}</h2>
+          <p className="track-artist" title={track.artist}>{track.artist}</p>
+          {track.album && <p className="track-album" title={track.album}>{track.album}</p>}
           <div className="track-meta">
             {track.bpm && <span className="meta-tag">{Math.round(track.bpm)} BPM</span>}
             {track.key && <span className="meta-tag">{track.key}</span>}
